@@ -236,9 +236,9 @@ function App() {
       ? null
       : {
           type: "server_vad",
-          threshold: 0.5,
+          threshold: 0.6,
           prefix_padding_ms: 300,
-          silence_duration_ms: 200,
+          silence_duration_ms: 800,
           create_response: true,
         };
 
@@ -250,7 +250,7 @@ function App() {
       session: {
         modalities: ["text", "audio"],
         instructions,
-        voice: "coral",
+        voice: "sage",
         input_audio_format: "pcm16",
         output_audio_format: "pcm16",
         input_audio_transcription: { model: "whisper-1" },
@@ -411,18 +411,18 @@ function App() {
             <Image
               src="/openai-logomark.svg"
               alt="OpenAI Logo"
-              width={20}
-              height={20}
+              width={60}
+              height={60}
               className="mr-2"
             />
           </div>
-          <div>
-            Realtime API <span className="text-gray-500">Agents</span>
+          <div className="text-red-600">
+            EIH    <span className="text-black">   digital twin</span>
           </div>
         </div>
         <div className="flex items-center">
           <label className="flex items-center text-base gap-1 mr-2 font-medium">
-            Scenario
+            ExpertiseDomain
           </label>
           <div className="relative inline-block">
             <select
@@ -450,7 +450,7 @@ function App() {
           {agentSetKey && (
             <div className="flex items-center ml-6">
               <label className="flex items-center text-base gap-1 mr-2 font-medium">
-                Agent
+                currentHelper
               </label>
               <div className="relative inline-block">
                 <select
