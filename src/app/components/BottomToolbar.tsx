@@ -1,8 +1,7 @@
 import React from "react";
-import { SessionStatus } from "@/app/types";
+import { useElements } from "@/app/contexts/ElementsContext";
 
 interface BottomToolbarProps {
-  sessionStatus: SessionStatus;
   onToggleConnection: () => void;
   isPTTActive: boolean;
   setIsPTTActive: (val: boolean) => void;
@@ -16,7 +15,6 @@ interface BottomToolbarProps {
 }
 
 function BottomToolbar({
-  sessionStatus,
   onToggleConnection,
   isPTTActive,
   setIsPTTActive,
@@ -28,6 +26,8 @@ function BottomToolbar({
   isAudioPlaybackEnabled,
   setIsAudioPlaybackEnabled,
 }: BottomToolbarProps) {
+  const { sessionStatus } = useElements();
+  
   const isConnected = sessionStatus === "CONNECTED";
   const isConnecting = sessionStatus === "CONNECTING";
 

@@ -1,26 +1,13 @@
 "use client";
 
-import { ServerEvent, SessionStatus, AgentConfig } from "@/app/types";
+import { ServerEvent } from "@/app/types";
 import { useTranscript } from "@/app/contexts/TranscriptContext";
 import { useEvent } from "@/app/contexts/EventContext";
+import { useElements } from "@/app/contexts/ElementsContext";
+import { useSendClientEvent } from "@/app/hooks/useSendClientEvent";
 import { useRef } from "react";
 
-export interface UseHandleServerEventParams {
-  setSessionStatus: (status: SessionStatus) => void;
-  selectedAgentName: string;
-  selectedAgentConfigSet: AgentConfig[] | null;
-  sendClientEvent: (eventObj: any, eventNameSuffix?: string) => void;
-  setSelectedAgentName: (name: string) => void;
-  shouldForceResponse?: boolean;
-}
-
-export function useHandleServerEvent({
-  setSessionStatus,
-  selectedAgentName,
-  selectedAgentConfigSet,
-  sendClientEvent,
-  setSelectedAgentName,
-}: UseHandleServerEventParams) {
+export function useHandleServerEvent() {
   const {
     transcriptItems,
     addTranscriptBreadcrumb,
@@ -30,6 +17,15 @@ export function useHandleServerEvent({
   } = useTranscript();
 
   const { logServerEvent } = useEvent();
+  
+  const {
+    selectedAgentName,
+    setSelectedAgentName,
+    selectedAgentConfigSet,
+    setSessionStatus,
+  } = useElements();
+  
+  const sendClientEvent = useSendClientEvent();
 
   const handleFunctionCall = async (functionCallParams: {
     name: string;
