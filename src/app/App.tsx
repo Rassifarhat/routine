@@ -5,11 +5,13 @@ import { useSearchParams } from "next/navigation";
 import { v4 as uuidv4 } from "uuid";
 
 import Image from "next/image";
-import { usePersistentState } from "./hooks/usePersistentState";
 // UI components
+import Eih from "./components/Eih";
 import Transcript from "./components/Transcript";
 import Events from "./components/Events";
+import SurgeryInfoNeeded from "./components/SurgeryInfoNeeded";
 import BottomToolbar from "./components/BottomToolbar";
+import SurgicalScribePage from "./components/surgicalScribePage";
 
 // Types
 import { AgentConfig, SessionStatus } from "@/app/types";
@@ -25,11 +27,13 @@ import { useSendSimulatedUserMessage } from "./hooks/useSendSimulatedUserMessage
 import { useUpdateSession } from "./hooks/useUpdateSession";
 import { useCancelAssistantSpeech } from "./hooks/useCancelAssistantSpeech";
 import { useHandleSendTextMessage } from "./hooks/useHandleSendTextMessage";
+import { usePersistentState } from "./hooks/usePersistentState";
 // Utilities
 import { createRealtimeConnection } from "./lib/realtimeConnection";
 
 // Agent configs
 import { allAgentSets, defaultAgentSetKey } from "@/app/agentConfigs";
+import { useElementsStore } from "@/store/elementsStore";
 
 function App() {
   const searchParams = useSearchParams();
@@ -38,7 +42,9 @@ function App() {
     useTranscript();
   const { logClientEvent, logServerEvent } = useEvent();
 
-  const { sessionStatus, setSessionStatus, pcRef, dcRef, dataChannel, setDataChannel, audioElementRef, selectedAgentName, setSelectedAgentName, selectedAgentConfigSet, setSelectedAgentConfigSet, userText, setUserText } = useElements();
+  const { sessionStatus, setSessionStatus, pcRef, dcRef, dataChannel, setDataChannel, audioElementRef, selectedAgentName, setSelectedAgentName, selectedAgentConfigSet, setSelectedAgentConfigSet, userText, setUserText, surgeryInfoNeeded } = useElements();
+  
+  const { loadSurgicalPage } = useElementsStore();
 
   const [isPTTUserSpeaking, setIsPTTUserSpeaking] = useState<boolean>(false);
 
@@ -175,20 +181,22 @@ function App() {
   const agentSetKey = searchParams.get("agentConfig") || "default";
 
   return (
-    <div className="text-base flex flex-col h-screen bg-gray-100 text-gray-800 relative">
+    <div className="text-base flex flex-col h-screen bg-health-dark text-gray-800 relative rounded-md">
       <div className="p-5 text-lg font-semibold flex justify-between items-center">
         <div className="flex items-center">
           <div onClick={() => window.location.reload()} style={{ cursor: 'pointer' }}>
             <Image
               src="/openai-logomark.svg"
               alt="OpenAI Logo"
-              width={60}
-              height={60}
+              width={30}
+              height={30}
               className="mr-2"
             />
           </div>
-          <div className="text-red-600">
-            EIH    <span className="text-black">   digital twin</span>
+          <div className="flex items-center">
+          <div className="text-black ">
+            Emirates International Hospital <span className="text-red-900">   digital twin</span>
+          </div>
           </div>
         </div>
         <div className="flex items-center">
@@ -255,16 +263,14 @@ function App() {
       </div>
 
       <div className="flex flex-1 gap-2 px-2 overflow-hidden relative">
-        <Transcript
-         
-          onSendMessage={handleSendTextMessage}
-          canSend={
-            sessionStatus === "CONNECTED" &&
-            dcRef.current?.readyState === "open"
-          }
-        />
-
-        <Events isExpanded={isEventsPaneExpanded} />
+        <Eih />
+        {loadSurgicalPage ? (
+          <SurgicalScribePage />
+        ) : surgeryInfoNeeded?.current ? (
+          <SurgeryInfoNeeded />
+        ) : (
+          <Events isExpanded={isEventsPaneExpanded} />
+        )}
       </div>
 
       <BottomToolbar

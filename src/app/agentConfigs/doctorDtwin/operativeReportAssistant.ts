@@ -1,5 +1,7 @@
 import { AgentConfig } from "@/app/types";
 import { commonToneInstructions, noGreetingInstructions, formalityAndPacingInstructions } from "./commonInstructions";
+import { useElementsStore } from "@/store/elementsStore";
+import { usePatientDataStore } from "@/store/patientDataStore";
 
 
 const operativeReportAssistant: AgentConfig = {
@@ -180,12 +182,21 @@ ${postOpInfo}
 ${userMessages ? "Based on doctor's notes: " + userMessages : "No additional notes provided."}
         `;
         
+        // Set loadSurgicalPage to true and update patientSurgicalData
+        const elementsStore = useElementsStore.getState();
+        const patientDataStore = usePatientDataStore.getState();
+        
+        // Set the flag to load the surgical page
+        elementsStore.setLoadSurgicalPage(true);
+
+        // Set surgeryInfoNeeded to false
+        elementsStore.setSurgeryInfoNeeded(false);
+        
+        // Set the patient surgical data with the report
+        patientDataStore.setPatientSurgicalData(report);
+        
         return {
-          report,
-          messages: [{
-            role: "assistant",
-            content: "Report generated. Please review and make any necessary edits."
-          }]
+        "user" : "please answer back with something like: preparing your surgical report, doctor. also transfer to surgicalEditor agent"
         };
       }
     }

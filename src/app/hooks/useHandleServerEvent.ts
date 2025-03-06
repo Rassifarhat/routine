@@ -23,6 +23,8 @@ export function useHandleServerEvent() {
     setSelectedAgentName,
     selectedAgentConfigSet,
     setSessionStatus,
+    setIsSpeaking,
+    setSurgeryInfoNeeded,
   } = useElements();
   
   const sendClientEvent = useSendClientEvent();
@@ -58,6 +60,9 @@ export function useHandleServerEvent() {
       sendClientEvent({ type: "response.create" });
     } else if (functionCallParams.name === "transferAgents") {
       const destinationAgent = args.destination_agent;
+      if (destinationAgent === "operativeReportAssistant") {
+        setSurgeryInfoNeeded(true);
+      }
       const newAgentConfig =
         selectedAgentConfigSet?.find((a) => a.name === destinationAgent) || null;
       if (newAgentConfig) {
@@ -180,6 +185,18 @@ export function useHandleServerEvent() {
         if (itemId) {
           updateTranscriptItemStatus(itemId, "DONE");
         }
+        break;
+      }
+
+      case "input_audio_buffer.speech_started": {
+        // User started speaking
+        setIsSpeaking(true);
+        break;
+      }
+
+      case "input_audio_buffer.speech_stopped": {
+        // User stopped speaking
+        setIsSpeaking(false);
         break;
       }
 

@@ -11,6 +11,12 @@ export default {
       colors: {
         background: "var(--background)",
         foreground: "var(--foreground)",
+        health: {
+          light: "#dddddd",
+          normal: "#999999",
+          dark: "#555555",
+          verydark: "#333333",
+        },
       },
     },
   },

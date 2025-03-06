@@ -3,6 +3,9 @@ import { create } from "zustand";
 import { AgentConfig, SessionStatus } from "@/app/types";
 import { RefObject, createRef } from "react";
 
+// Define a type for email status
+export type EmailStatus = 'idle' | 'sending' | 'done';
+
 interface ElementsState {
   // Agent-related state
   selectedAgentName: string;
@@ -19,6 +22,22 @@ interface ElementsState {
   // User input state
   userText: string;
   setUserText: (text: string) => void;
+  
+  // User speaking state
+  isSpeaking: RefObject<boolean | null>;
+  setIsSpeaking: (speaking: boolean) => void;
+  
+  // Surgery info state
+  surgeryInfoNeeded: RefObject<boolean | null>;
+  setSurgeryInfoNeeded: (needed: boolean) => void;
+  
+  // Surgical page state
+  loadSurgicalPage: boolean;
+  setLoadSurgicalPage: (load: boolean) => void;
+  
+  // Email status state
+  sendEmailStatus: EmailStatus;
+  setSendEmailStatus: (status: EmailStatus) => void;
   
   // Refs
   pcRef: RefObject<RTCPeerConnection | null>;
@@ -43,6 +62,38 @@ export const useElementsStore = create<ElementsState>((set) => ({
   // User input state
   userText: "",
   setUserText: (text) => set({ userText: text }),
+  
+  // User speaking state - defaults to false
+  isSpeaking: (() => {
+    const ref = createRef<boolean | null>();
+    ref.current = false; // Initialize with false (not speaking)
+    return ref;
+  })(),
+  setIsSpeaking: (speaking) => {
+    if (useElementsStore.getState().isSpeaking.current !== speaking) {
+      useElementsStore.getState().isSpeaking.current = speaking;
+    }
+  },
+  
+  // Surgery info state - defaults to false
+  surgeryInfoNeeded: (() => {
+    const ref = createRef<boolean | null>();
+    ref.current = false; // Initialize with false
+    return ref;
+  })(),
+  setSurgeryInfoNeeded: (needed) => {
+    if (useElementsStore.getState().surgeryInfoNeeded.current !== needed) {
+      useElementsStore.getState().surgeryInfoNeeded.current = needed;
+    }
+  },
+  
+  // Surgical page state - defaults to false
+  loadSurgicalPage: false,
+  setLoadSurgicalPage: (load) => set({ loadSurgicalPage: load }),
+  
+  // Email status state - defaults to 'idle'
+  sendEmailStatus: 'idle',
+  setSendEmailStatus: (status) => set({ sendEmailStatus: status }),
   
   // Refs (initialized once)
   pcRef: createRef<RTCPeerConnection | null>(),

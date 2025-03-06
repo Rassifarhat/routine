@@ -1,10 +1,12 @@
 import { RefObject } from "react";
+import { useElementsStore } from "@/store/elementsStore";
 
 export async function createRealtimeConnection(
   EPHEMERAL_KEY: string,
   audioElement: RefObject<HTMLAudioElement | null>
 ): Promise<{ pc: RTCPeerConnection; dc: RTCDataChannel }> {
   const pc = new RTCPeerConnection();
+  const { micRef } = useElementsStore.getState();
 
   pc.ontrack = (e) => {
     if (audioElement.current) {
@@ -12,7 +14,9 @@ export async function createRealtimeConnection(
     }
   };
 
+  // Get microphone access and store the MediaStream in micRef
   const ms = await navigator.mediaDevices.getUserMedia({ audio: true });
+  micRef.current = ms;
   pc.addTrack(ms.getTracks()[0]);
 
   const dc = pc.createDataChannel("oai-events");
@@ -41,4 +45,4 @@ export async function createRealtimeConnection(
   await pc.setRemoteDescription(answer);
 
   return { pc, dc };
-} 
+}
