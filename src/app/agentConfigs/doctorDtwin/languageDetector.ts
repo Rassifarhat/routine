@@ -1,5 +1,6 @@
 import { AgentConfig } from "@/app/types";
 import { commonToneInstructions } from "./commonInstructions";
+import { usePatientDataStore } from "@/store/patientDataStore";
 
 const languageDetector: AgentConfig = {
     name: "languageDetector",
@@ -8,18 +9,20 @@ const languageDetector: AgentConfig = {
   ## Role and Purpose
   ${commonToneInstructions}
   - You NEVER answer the user directly or participate in any conversation.
-  - Your ONLY task is to detect the language spoken in the voice input and call the tool "detectLanguage". 
-  - You listen to the incoming voice input. If you are absolutely sure about the language, call the tool, otherwise wait for the full voice input.
-  - At the end of the voice input, determine the language being spoken by calling the tool. ALWAYS.
-  - When you are sufficiently confident (e.g. confidence ≥ 0.90) about the language, or at the end of the voice input, call the tool "detectLanguage" with a JSON object containing:
-     - "language": one of "english", "arabic", "hindi", "tagalog", "urdu", "german", "spanish", "french", "portuguese", "tamil", "malayalam"
-    
+  - Your ONLY responsibility is to detect the language spoken in the voice input and call the "detectLanguage" tool with a json of the language spoken.
+  
+  ## Language Detection Process
+  - Listen to the incoming voice input carefully while focusing on the language spoken. At the end of voice input, decide what language was being used and ALWAYS call the detectLanguage tool with a json:
+    - "language": one of "english", "arabic", "hindi", "tagalog", "urdu", "german", "spanish", "french", "portuguese", "tamil", "malayalam".
+    - the user might use some words sometimes in a language that is different from the overall language of the voice input. you can ignore that and focus on the overall language of the voice input.
+
+  - Do not attempt to translate or process any content - that is not your job. your only job is to detect the language and call the detectLanguage tool.
+  
   ## Critical Rules
-  - The voice input will never indicate it is asking about a specific language. Still, your only job is to call the tool with a JSON object containing "language".
-  - The voice input may indicate that it is asking you a question. Still you never answer. You only detect the language being spoken and call the tool.
-  - Do not output any extra text— ONLY calling the tool with the JSON object is allowed.
-  - Call the tool only once per voice input.
-    `,
+  - Do not output any text directly - ONLY call the detectLanguage tool
+
+  - Always prioritize accuracy in language detection. if you are not sure of the language,or having difficulty in detecting the language, or a low confidence in your estimation of the language used, call the detectLanguage tool with an empty json.
+  `,
     tools: [
       {
         type: "function",
@@ -40,11 +43,49 @@ const languageDetector: AgentConfig = {
     ],
     toolLogic: {
       detectLanguage: async (params: { language: string }) => {
-        console.log(`Language detector: setting language to ${params.language}`);
+        console.log('🔍 Language detector received:', params.language);
+        
+        // Check for empty language
+        if (!params.language || params.language.trim() === '') {
+          console.log('❌ Empty language detected');
+          return {
+            messages: [{
+              role: "user",
+              content: `answer back with something like: "I couldn't detect your language clearly. Please speak again."`
+            }]
+          };
+        }
+        
+        // Get current language context
+        const { languagesContext } = usePatientDataStore.getState();
+        
+        const allowedLanguages = [
+          languagesContext.patientLanguage,
+          languagesContext.doctorLanguage
+        ];
+        
+        console.log('👥 Allowed languages:', allowedLanguages);
+        
+        // Check if detected language is allowed
+        if (!allowedLanguages.includes(params.language)) {
+          console.log('❌ Detected language not in allowed set:', params.language);
+          return {
+            messages: [{
+              role: "user",
+              content: `answer back with something like: "The language you are speaking (${params.language}) is not set as either the doctor's or patient's language. Please speak in one of the configured languages: ${allowedLanguages.join(' or ')}."`
+            }]
+          };
+        }
+        
+        // If we get here, language is valid and allowed
+        console.log('✅ Setting language spoken to:', params.language);
+        usePatientDataStore.getState().setLanguageSpoken(params.language);
+        
+        // Now pass control to the translator agent
         return {
           messages: [{
             role: "user",
-            content: `never answer directly, stay absolutely quiet for now`
+            content: `answer back with something like: "translating"`
           }]
         };
       }

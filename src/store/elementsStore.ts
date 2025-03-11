@@ -27,6 +27,12 @@ interface ElementsState {
   isSpeaking: RefObject<boolean | null>;
   setIsSpeaking: (speaking: boolean) => void;
   
+  // TranslationsPage flags
+  showTranslationsPage: boolean;
+  setShowTranslationsPage: (show: boolean) => void;
+  theUserIsSpeaking: boolean;
+  setTheUserIsSpeaking: (speaking: boolean) => void;
+  
   // Surgery info state
   surgeryInfoNeeded: RefObject<boolean | null>;
   setSurgeryInfoNeeded: (needed: boolean) => void;
@@ -74,6 +80,12 @@ export const useElementsStore = create<ElementsState>((set) => ({
       useElementsStore.getState().isSpeaking.current = speaking;
     }
   },
+  
+  // TranslationsPage flags - defaults to false
+  showTranslationsPage: false,
+  setShowTranslationsPage: (show) => set({ showTranslationsPage: show }),
+  theUserIsSpeaking: false,
+  setTheUserIsSpeaking: (speaking) => set({ theUserIsSpeaking: speaking }),
   
   // Surgery info state - defaults to false
   surgeryInfoNeeded: (() => {

@@ -2,7 +2,7 @@ import { AgentConfig } from "@/app/types";
 import { commonToneInstructions, formalityAndPacingInstructions } from "./commonInstructions";
 
 
-const chiefAssistant: AgentConfig = {
+const chiefAssistant1: AgentConfig = {
   name: "chiefAssistant",
   publicDescription: "Agent that greets doctors and handles their requests by transfering to an appropriate agent.",
   instructions: `
@@ -80,4 +80,4 @@ ${formalityAndPacingInstructions}
 };
 
 
-export default chiefAssistant;
+export default chiefAssistant1;

@@ -1,6 +1,7 @@
 import { AgentConfig } from "@/app/types";
 import { commonToneInstructions, noGreetingInstructions, formalityAndPacingInstructions } from "./commonInstructions";
-
+import { useElementsStore } from "@/store/elementsStore";
+import { usePatientDataStore, LanguagesContext } from "@/store/patientDataStore";
 
 
 const translationCoordinator: AgentConfig = {
@@ -12,17 +13,15 @@ const translationCoordinator: AgentConfig = {
   ${noGreetingInstructions}
   - Start by asking about the doctor's language and patient's language.
   - Remember this data and call the tool setLanguageContext with the doctor's and patient's languages.
-  - Then call the tool startParallelAgents to enable parallel audio processing.
-  - Then call languageDetectorTool to detect the language of the voice input.
-  - Then transfer immediately to the languageDetector agent.
+  - finally transfer to languageDetector agent to detect the language of the voice input.
 
 
   ## Critical Rules
   - Do not provide any greetings or extra commentary
-  - Follow the order: get the information, call setLanguageContext, call startParallelAgents.
+  - Follow the order: get the information, call setLanguageContext, transfer to languageDetector agent.
   - Only accept supported languages: english, arabic, hindi, tagalog, urdu, german, french, spanish, portuguese, tamil, malayalam. you can prompt the user to repeat if they submit an unsupported language
   - Immediately call tools when conditions are met.
-  - Always yield control to languageDetector after tool startParallelAgents is called.
+  - ALWAYS yield control to languageDetector after tool setLanguageContext is called.
 
   ${formalityAndPacingInstructions}
   `,
@@ -47,32 +46,26 @@ const translationCoordinator: AgentConfig = {
         },
         required: ["doctorLanguage", "patientLanguage"]
       }
-    },
-    {
-      type: "function",
-      name: "startParallelAgents",
-      description: "Sets the parallelConnection flag to true to enable parallel audio processing.",
-      parameters: {
-        type: "object",
-        properties: {},
-        required: []
-      }
     }
   ],
   toolLogic: {
     setLanguageContext(params: { doctorLanguage: string; patientLanguage: string }) {
-      return {
-        messages: [{
-          role: "assistant",
-          content: `Languages set: doctor (${params.doctorLanguage}), patient (${params.patientLanguage}). Starting parallel processing...`
-        }]
+      console.log(`Translation Coordinator: setting language context - Patient: ${params.patientLanguage}, Doctor: ${params.doctorLanguage}`);
+      
+      // Update the languages context in the patient data store
+      const languagesContext: LanguagesContext = {
+        patientLanguage: params.patientLanguage,
+        doctorLanguage: params.doctorLanguage
       };
-    },
-    startParallelAgents() {
+      usePatientDataStore.getState().setLanguagesContext(languagesContext);
+      
+      // Set the flag to show the Translations Page
+      useElementsStore.getState().setShowTranslationsPage(true);
+      
       return {
         messages: [{
           role: "assistant",
-          content: "Parallel processing started. Please begin speaking."
+          content: ` transfer control to languageDetector now and start with something like:  "please proceed with your conversation with the patient" `
         }]
       };
     }

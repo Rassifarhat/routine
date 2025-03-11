@@ -5,6 +5,7 @@ import { useTranscript } from "@/app/contexts/TranscriptContext";
 import { useEvent } from "@/app/contexts/EventContext";
 import { useElements } from "@/app/contexts/ElementsContext";
 import { useSendClientEvent } from "@/app/hooks/useSendClientEvent";
+import { useElementsStore } from "@/store/elementsStore";
 import { useRef } from "react";
 
 export function useHandleServerEvent() {
@@ -147,7 +148,15 @@ export function useHandleServerEvent() {
             ? "[inaudible]"
             : serverEvent.transcript;
         if (itemId) {
+          console.log(`Transcript completed for itemId ${itemId}. Updating status to DONE.`);
           updateTranscriptMessage(itemId, finalTranscript, false);
+          updateTranscriptItemStatus(itemId, "DONE");
+          
+          // Log the current state of transcript items to verify the update
+          setTimeout(() => {
+            const items = transcriptItems.filter(item => item.itemId === itemId);
+            console.log("Updated item status:", items.length ? items[0].status : "item not found");
+          }, 100);
         }
         break;
       }
@@ -157,6 +166,7 @@ export function useHandleServerEvent() {
         const deltaText = serverEvent.delta || "";
         if (itemId) {
           updateTranscriptMessage(itemId, deltaText, true);
+         
         }
         break;
       }
@@ -191,12 +201,16 @@ export function useHandleServerEvent() {
       case "input_audio_buffer.speech_started": {
         // User started speaking
         setIsSpeaking(true);
+        // Set the flag for parallel processing in TranslationsPage
+        useElementsStore.getState().setTheUserIsSpeaking(true);
         break;
       }
 
       case "input_audio_buffer.speech_stopped": {
         // User stopped speaking
         setIsSpeaking(false);
+        // Set the flag for parallel processing in TranslationsPage
+        useElementsStore.getState().setTheUserIsSpeaking(false);
         break;
       }
 

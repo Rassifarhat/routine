@@ -12,6 +12,7 @@ import Events from "./components/Events";
 import SurgeryInfoNeeded from "./components/SurgeryInfoNeeded";
 import BottomToolbar from "./components/BottomToolbar";
 import SurgicalScribePage from "./components/surgicalScribePage";
+import TranslationsPage from "./components/TranslationsPage";
 
 // Types
 import { AgentConfig, SessionStatus } from "@/app/types";
@@ -25,6 +26,7 @@ import { useHandleServerEvent } from "./hooks/useHandleServerEvent";
 import { useSendClientEvent } from "./hooks/useSendClientEvent";
 import { useSendSimulatedUserMessage } from "./hooks/useSendSimulatedUserMessage";
 import { useUpdateSession } from "./hooks/useUpdateSession";
+import { useSendEmail } from "./hooks/useSendEmail";
 import { useCancelAssistantSpeech } from "./hooks/useCancelAssistantSpeech";
 import { useHandleSendTextMessage } from "./hooks/useHandleSendTextMessage";
 import { usePersistentState } from "./hooks/usePersistentState";
@@ -41,10 +43,10 @@ function App() {
   const { transcriptItems, addTranscriptMessage, addTranscriptBreadcrumb } =
     useTranscript();
   const { logClientEvent, logServerEvent } = useEvent();
-
+  const [initialGreetingSent, setInitialGreetingSent] = useState(false);
   const { sessionStatus, setSessionStatus, pcRef, dcRef, dataChannel, setDataChannel, audioElementRef, selectedAgentName, setSelectedAgentName, selectedAgentConfigSet, setSelectedAgentConfigSet, userText, setUserText, surgeryInfoNeeded } = useElements();
   
-  const { loadSurgicalPage } = useElementsStore();
+  const { loadSurgicalPage, showTranslationsPage } = useElementsStore();
 
   const [isPTTUserSpeaking, setIsPTTUserSpeaking] = useState<boolean>(false);
 
@@ -101,11 +103,20 @@ function App() {
         `Agent: ${selectedAgentName}`,
         currentAgent
       );
-      updateSession(true, isPTTActive);
+      if (!initialGreetingSent) {
+        updateSession(true, isPTTActive);
+        setInitialGreetingSent(true);
+      } else {
+        // On subsequent agent changes, update session silently.
+        updateSession(true, isPTTActive);
+      }
     }
   }, [selectedAgentConfigSet, selectedAgentName, sessionStatus]);
 
-
+  const changeAgent = (agentName: string) => {
+    setSelectedAgentName(agentName);
+    console.log("Agent changed to", agentName);
+  };
 
   useEffect(() => {
     if (sessionStatus === "CONNECTED") {
@@ -263,11 +274,18 @@ function App() {
       </div>
 
       <div className="flex flex-1 gap-2 px-2 overflow-hidden relative">
-        <Eih />
+        <Transcript
+          onSendMessage={handleSendTextMessage}
+          canSend={
+            sessionStatus === "CONNECTED" &&
+            dcRef.current?.readyState === "open"
+          } />
         {loadSurgicalPage ? (
           <SurgicalScribePage />
         ) : surgeryInfoNeeded?.current ? (
           <SurgeryInfoNeeded />
+        ) : showTranslationsPage ? (
+          <TranslationsPage onAgentChange={changeAgent} />
         ) : (
           <Events isExpanded={isEventsPaneExpanded} />
         )}
