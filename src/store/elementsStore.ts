@@ -23,15 +23,13 @@ interface ElementsState {
   userText: string;
   setUserText: (text: string) => void;
   
-  // User speaking state
-  isSpeaking: RefObject<boolean | null>;
-  setIsSpeaking: (speaking: boolean) => void;
-  
   // TranslationsPage flags
   showTranslationsPage: boolean;
   setShowTranslationsPage: (show: boolean) => void;
   theUserIsSpeaking: boolean;
   setTheUserIsSpeaking: (speaking: boolean) => void;
+  assistantVoiceFinished: boolean;
+  setAssistantVoiceFinished: (finished: boolean) => void;
   
   // Surgery info state
   surgeryInfoNeeded: RefObject<boolean | null>;
@@ -56,7 +54,10 @@ export const useElementsStore = create<ElementsState>((set) => ({
   // Agent-related state
   selectedAgentName: "",
   selectedAgentConfigSet: null,
-  setSelectedAgentName: (name) => set({ selectedAgentName: name }),
+  setSelectedAgentName: (name) => { 
+    //console.log("SelectedAgentName", name);
+    set({ selectedAgentName: name })},
+    
   setSelectedAgentConfigSet: (configSet) => set({ selectedAgentConfigSet: configSet }),
   
   // Connection-related state
@@ -69,23 +70,17 @@ export const useElementsStore = create<ElementsState>((set) => ({
   userText: "",
   setUserText: (text) => set({ userText: text }),
   
-  // User speaking state - defaults to false
-  isSpeaking: (() => {
-    const ref = createRef<boolean | null>();
-    ref.current = false; // Initialize with false (not speaking)
-    return ref;
-  })(),
-  setIsSpeaking: (speaking) => {
-    if (useElementsStore.getState().isSpeaking.current !== speaking) {
-      useElementsStore.getState().isSpeaking.current = speaking;
-    }
-  },
-  
   // TranslationsPage flags - defaults to false
   showTranslationsPage: false,
   setShowTranslationsPage: (show) => set({ showTranslationsPage: show }),
   theUserIsSpeaking: false,
-  setTheUserIsSpeaking: (speaking) => set({ theUserIsSpeaking: speaking }),
+  setTheUserIsSpeaking: (speaking) => {
+    //console.log("store: TheUserIsSpeaking", speaking);
+    set({ theUserIsSpeaking: speaking })},
+  assistantVoiceFinished: false,
+  setAssistantVoiceFinished: (finished) => {
+    //console.log("store: AssistantVoiceFinished", finished);
+    set({ assistantVoiceFinished: finished })},
   
   // Surgery info state - defaults to false
   surgeryInfoNeeded: (() => {

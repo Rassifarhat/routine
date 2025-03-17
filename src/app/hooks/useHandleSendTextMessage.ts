@@ -2,12 +2,12 @@
 
 import { useSendClientEvent } from "./useSendClientEvent";
 import { useCancelAssistantSpeech } from "./useCancelAssistantSpeech";
-import { useElements } from "@/app/contexts/ElementsContext";
+import { useElementsStore } from "@/store/elementsStore";
 
 export function useHandleSendTextMessage() {
   const sendClientEvent = useSendClientEvent();
   const cancelAssistantSpeech = useCancelAssistantSpeech();
-  const { userText, setUserText } = useElements();
+  const { userText, setUserText } = useElementsStore();
 
   const handleSendTextMessage = () => {
     if (!userText.trim()) return;

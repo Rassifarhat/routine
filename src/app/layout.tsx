@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { TranscriptProvider } from "@/app/contexts/TranscriptContext";
 import { EventProvider } from "@/app/contexts/EventContext";
-import { ElementsProvider } from "@/app/contexts/ElementsContext";
+// ElementsProvider removed - using zustand directly
 
 export const metadata: Metadata = {
   title: "HealthCare Digital Twin",
@@ -20,9 +20,7 @@ export default function RootLayout({
       <body className={`antialiased`}>
         <EventProvider>
           <TranscriptProvider>
-            <ElementsProvider>
-              {children}
-            </ElementsProvider>
+            {children}
           </TranscriptProvider>
         </EventProvider>
       </body>

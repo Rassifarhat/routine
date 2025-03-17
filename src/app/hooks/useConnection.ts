@@ -2,7 +2,7 @@
 "use client";
 
 import { useEvent } from "@/app/contexts/EventContext";
-import { useElements } from "@/app/contexts/ElementsContext";
+import { useElementsStore } from "@/store/elementsStore";
 import { createRealtimeConnection } from "@/app/lib/realtimeConnection";
 import { RefObject } from "react";
 
@@ -15,7 +15,7 @@ export function useConnection() {
     audioElementRef, 
     setDataChannel,
     sessionStatus
-  } = useElements();
+  } = useElementsStore();
 
   const fetchEphemeralKey = async (): Promise<string | null> => {
     logClientEvent({ url: "/session" }, "fetch_session_token_request");

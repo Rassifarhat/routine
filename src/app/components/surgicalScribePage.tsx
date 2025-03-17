@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useChat } from "@ai-sdk/react";
 import { useTranscript } from "@/app/contexts/TranscriptContext"
 import { useEvent } from "@/app/contexts/EventContext"
@@ -8,6 +8,7 @@ import { usePatientDataStore } from "@/store/patientDataStore";
 import { useElementsStore } from "@/store/elementsStore";
 import { useSendEmail } from "@/app/hooks/useSendEmail";
 import Message from "./message";
+import {marked} from 'marked';
 
 export default function SurgicalScribePage() {
   // Get patient surgical data context including clear method
@@ -35,16 +36,34 @@ export default function SurgicalScribePage() {
   });
   const { transcriptItems } = useTranscript();
   const scrollRef = useRef<HTMLDivElement>(null);
- 
+  const [convertedContent, setConvertedContent] = useState("");
   const lastSubmitted = useRef<string | null>(null);
 
   // Get the last message from the server (assistant) if available
   const lastServerMessage = messages.length > 0 
     ? messages.filter(m => m.role === 'assistant').pop()?.content || ''
     : '';
+    useEffect(() => {
+      async function convertMarkdown() {
+        try {
+          const html = await marked(lastServerMessage);
+          setConvertedContent(html);
+        } catch (error) {
+          console.error("Error converting markdown:", error);
+        }
+      }
+      if (lastServerMessage) {
+        convertMarkdown();
+      }
+    }, [lastServerMessage]);
+const plainTextContent = lastServerMessage.replace(/<[^>]*>/g, '');
 
-  // Use the email sending hook - pass the last server message to it
-  const emailResponse = useSendEmail({ data: lastServerMessage });
+const emailResponse = useSendEmail({ 
+  data: { 
+    html: convertedContent, 
+    plainText: plainTextContent 
+  } 
+});
 
   // Handle email response
   useEffect(() => {

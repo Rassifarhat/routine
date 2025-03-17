@@ -6,16 +6,19 @@ import { injectTransferTools } from "../utils";
 import translationCoordinator from "./translationCoordinator";
 import languageDetector from "./languageDetector";
 import translator from "./translator";
+import patientToDoctor from "./patientToDoctor";
+import doctorToPatient from "./doctorToPatient";
 
 // Define agent relationships
 chiefAssistant.downstreamAgents = [operativeReportAssistant, translationCoordinator]; 
 operativeReportAssistant.downstreamAgents = [surgicalEditor];
 surgicalEditor.downstreamAgents = [chiefAssistant];
-translationCoordinator.downstreamAgents = [languageDetector];
+translationCoordinator.downstreamAgents = [];
 
-// Set up the cyclical relationship between languageDetector and translator
-languageDetector.downstreamAgents = [translator];
-translator.downstreamAgents = [languageDetector];
+languageDetector.downstreamAgents = [];
+translator.downstreamAgents = [];
+patientToDoctor.downstreamAgents = [];
+doctorToPatient.downstreamAgents = [];
 
 // Inject transfer tools to all agents
 const doctorAgents = injectTransferTools([
@@ -24,7 +27,9 @@ const doctorAgents = injectTransferTools([
   surgicalEditor, 
   translationCoordinator, 
   languageDetector,
-  translator
+  translator,
+  patientToDoctor,
+  doctorToPatient
 ]);
 
 // Export the agent set

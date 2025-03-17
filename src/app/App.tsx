@@ -16,7 +16,7 @@ import TranslationsPage from "./components/TranslationsPage";
 
 // Types
 import { AgentConfig, SessionStatus } from "@/app/types";
-import { useElements } from "./contexts/ElementsContext";
+// Removed ElementsContext import - using ElementsStore directly
 
 // Context providers & hooks
 import { useConnection } from "./hooks/useConnection";
@@ -44,9 +44,14 @@ function App() {
     useTranscript();
   const { logClientEvent, logServerEvent } = useEvent();
   const [initialGreetingSent, setInitialGreetingSent] = useState(false);
-  const { sessionStatus, setSessionStatus, pcRef, dcRef, dataChannel, setDataChannel, audioElementRef, selectedAgentName, setSelectedAgentName, selectedAgentConfigSet, setSelectedAgentConfigSet, userText, setUserText, surgeryInfoNeeded } = useElements();
-  
-  const { loadSurgicalPage, showTranslationsPage } = useElementsStore();
+  const { 
+    sessionStatus, setSessionStatus, 
+    pcRef, dcRef, dataChannel, setDataChannel, 
+    audioElementRef, selectedAgentName, setSelectedAgentName, 
+    selectedAgentConfigSet, setSelectedAgentConfigSet, 
+    userText, setUserText, surgeryInfoNeeded,
+    loadSurgicalPage, showTranslationsPage 
+  } = useElementsStore();
 
   const [isPTTUserSpeaking, setIsPTTUserSpeaking] = useState<boolean>(false);
 
@@ -115,7 +120,7 @@ function App() {
 
   const changeAgent = (agentName: string) => {
     setSelectedAgentName(agentName);
-    console.log("Agent changed to", agentName);
+    console.log(" app.tsx: Agent changed to", agentName);
   };
 
   useEffect(() => {
@@ -284,9 +289,11 @@ function App() {
           <SurgicalScribePage />
         ) : surgeryInfoNeeded?.current ? (
           <SurgeryInfoNeeded />
-        ) : showTranslationsPage ? (
-          <TranslationsPage onAgentChange={changeAgent} />
-        ) : (
+        ) 
+        : showTranslationsPage ? (
+          <TranslationsPage changeAgent={changeAgent} />
+        ) 
+        : (
           <Events isExpanded={isEventsPaneExpanded} />
         )}
       </div>

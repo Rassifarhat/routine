@@ -5,7 +5,7 @@ import ReactMarkdown from "react-markdown";
 import { TranscriptItem } from "@/app/types";
 import Image from "next/image";
 import { useTranscript } from "@/app/contexts/TranscriptContext";
-import { useElements } from "@/app/contexts/ElementsContext";
+import { useElementsStore } from "@/store/elementsStore";
 
 export interface TranscriptProps {
   onSendMessage: () => void;
@@ -16,7 +16,7 @@ function Transcript({
   onSendMessage,
   canSend,
 }: TranscriptProps) {
-  const { userText, setUserText } = useElements();
+  const { userText, setUserText } = useElementsStore();
   const { transcriptItems, toggleTranscriptItemExpand } = useTranscript();
   const transcriptRef = useRef<HTMLDivElement | null>(null);
   const [prevLogs, setPrevLogs] = useState<TranscriptItem[]>([]);

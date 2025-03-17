@@ -35,18 +35,22 @@ export const usePatientDataStore = create<PatientDataState>((set) => ({
   
   // Initialize language information with empty value
   languageSpoken: "",
-  setLanguageSpoken: (language) => set({ 
+  setLanguageSpoken: (language) => {
+    console.log('Setting language spoken to:', language);
+    set({ 
     languageSpoken: language 
-  }),
+  })},
   
   // Initialize languages context with empty values
   languagesContext: {
     patientLanguage: "",
     doctorLanguage: ""
   },
-  setLanguagesContext: (context) => set({ 
+  setLanguagesContext: (context) => { 
+    console.log('Setting languages context to:', context);
+    set({ 
     languagesContext: context 
-  }),
+  })},
   
   // Initialize translation text with empty value
   translationText: "",

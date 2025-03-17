@@ -4,25 +4,19 @@ import React, { useEffect, useState } from "react";
 
 import App from "./App";
 import { motion } from "framer-motion";
-import { useElements } from "@/app/contexts/ElementsContext";
+import { useElementsStore } from "@/store/elementsStore";
 
 export default function Page() {
-  const { isSpeaking } = useElements();
+  const { theUserIsSpeaking } = useElementsStore();
   const [speaking, setSpeaking] = useState(false);
 
-  // Update speaking state when isSpeaking changes
+  // Update speaking state when theUserIsSpeaking changes
   useEffect(() => {
-    const intervalId = setInterval(() => {
-      // Check the current speaking state
-      const currentSpeaking = isSpeaking?.current || false;
-      
-      if (currentSpeaking !== speaking) {
-        setSpeaking(currentSpeaking);
-      }
-    }, 50);
-    
-    return () => clearInterval(intervalId);
-  }, [isSpeaking, speaking]);
+    // Direct state update - no need for interval
+    if (theUserIsSpeaking !== speaking) {
+      setSpeaking(theUserIsSpeaking);
+    }
+  }, [theUserIsSpeaking]); // Only depend on theUserIsSpeaking to prevent infinite loops
 
   return (
     <div className="relative w-screen h-screen overflow-hidden">

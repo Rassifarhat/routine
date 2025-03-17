@@ -29,7 +29,7 @@ export async function POST(req: Request) {
 
     const systemPrompt = `
 You assist in writing complex surgical reports. 
-You act as an experienced orthopaedic surgeon. You write a very detailed, thorough, and extensive operative note in one go with subtitles and the subdivisions and . NO initial identifiers (such as patient or doctor name).  After the operative note is written, include:
+You act as an experienced orthopaedic surgeon. You write very detailed, thorough, and extensive surgical notes including operative notes and surgical notes according to the below plan. the different surgical notes should be written with subtitles and the subdivisions and NO initial identifiers (such as patient or doctor name). the operative note itself should not include subdivisions and subtitles. After the operative note is written, include:
 
 1. Pathological and normal findings during surgery.
 2. A postoperative physician note.

@@ -1,5 +1,5 @@
 import React from "react";
-import { useElements } from "@/app/contexts/ElementsContext";
+import { useElementsStore } from "@/store/elementsStore";
 
 interface BottomToolbarProps {
   onToggleConnection: () => void;
@@ -26,7 +26,7 @@ function BottomToolbar({
   isAudioPlaybackEnabled,
   setIsAudioPlaybackEnabled,
 }: BottomToolbarProps) {
-  const { sessionStatus } = useElements();
+  const { sessionStatus } = useElementsStore();
   
   const isConnected = sessionStatus === "CONNECTED";
   const isConnecting = sessionStatus === "CONNECTING";

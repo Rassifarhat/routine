@@ -13,7 +13,7 @@ const translationCoordinator: AgentConfig = {
   ${noGreetingInstructions}
   - Start by asking about the doctor's language and patient's language.
   - Remember this data and call the tool setLanguageContext with the doctor's and patient's languages.
-  - finally transfer to languageDetector agent to detect the language of the voice input.
+ 
 
 
   ## Critical Rules
@@ -21,7 +21,7 @@ const translationCoordinator: AgentConfig = {
   - Follow the order: get the information, call setLanguageContext, transfer to languageDetector agent.
   - Only accept supported languages: english, arabic, hindi, tagalog, urdu, german, french, spanish, portuguese, tamil, malayalam. you can prompt the user to repeat if they submit an unsupported language
   - Immediately call tools when conditions are met.
-  - ALWAYS yield control to languageDetector after tool setLanguageContext is called.
+
 
   ${formalityAndPacingInstructions}
   `,
@@ -50,7 +50,8 @@ const translationCoordinator: AgentConfig = {
   ],
   toolLogic: {
     setLanguageContext(params: { doctorLanguage: string; patientLanguage: string }) {
-      console.log(`Translation Coordinator: setting language context - Patient: ${params.patientLanguage}, Doctor: ${params.doctorLanguage}`);
+      console.log(` agent Translation Coordinator: setting language context - Patient: ${params.patientLanguage}, Doctor: ${params.doctorLanguage}`);
+
       
       // Update the languages context in the patient data store
       const languagesContext: LanguagesContext = {

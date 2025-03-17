@@ -3,10 +3,13 @@
 import { ServerEvent } from "@/app/types";
 import { useTranscript } from "@/app/contexts/TranscriptContext";
 import { useEvent } from "@/app/contexts/EventContext";
-import { useElements } from "@/app/contexts/ElementsContext";
 import { useSendClientEvent } from "@/app/hooks/useSendClientEvent";
 import { useElementsStore } from "@/store/elementsStore";
 import { useRef } from "react";
+
+function generateId() {
+  return crypto?.randomUUID ? crypto.randomUUID() : Date.now().toString();
+}
 
 export function useHandleServerEvent() {
   const {
@@ -19,15 +22,6 @@ export function useHandleServerEvent() {
 
   const { logServerEvent } = useEvent();
   
-  const {
-    selectedAgentName,
-    setSelectedAgentName,
-    selectedAgentConfigSet,
-    setSessionStatus,
-    setIsSpeaking,
-    setSurgeryInfoNeeded,
-  } = useElements();
-  
   const sendClientEvent = useSendClientEvent();
 
   const handleFunctionCall = async (functionCallParams: {
@@ -36,6 +30,8 @@ export function useHandleServerEvent() {
     arguments: string;
   }) => {
     const args = JSON.parse(functionCallParams.arguments);
+    const selectedAgentName = useElementsStore.getState().selectedAgentName;
+    const selectedAgentConfigSet = useElementsStore.getState().selectedAgentConfigSet;
     const currentAgent = selectedAgentConfigSet?.find(
       (a) => a.name === selectedAgentName
     );
@@ -62,12 +58,12 @@ export function useHandleServerEvent() {
     } else if (functionCallParams.name === "transferAgents") {
       const destinationAgent = args.destination_agent;
       if (destinationAgent === "operativeReportAssistant") {
-        setSurgeryInfoNeeded(true);
+        useElementsStore.getState().setSurgeryInfoNeeded(true);
       }
       const newAgentConfig =
         selectedAgentConfigSet?.find((a) => a.name === destinationAgent) || null;
       if (newAgentConfig) {
-        setSelectedAgentName(destinationAgent);
+        useElementsStore.getState().setSelectedAgentName(destinationAgent);
       }
       const functionCallOutput = {
         destination_agent: destinationAgent,
@@ -110,7 +106,7 @@ export function useHandleServerEvent() {
     switch (serverEvent.type) {
       case "session.created": {
         if (serverEvent.session?.id) {
-          setSessionStatus("CONNECTED");
+          useElementsStore.getState().setSessionStatus("CONNECTED");
           addTranscriptBreadcrumb(
             `session.id: ${
               serverEvent.session.id
@@ -148,15 +144,7 @@ export function useHandleServerEvent() {
             ? "[inaudible]"
             : serverEvent.transcript;
         if (itemId) {
-          console.log(`Transcript completed for itemId ${itemId}. Updating status to DONE.`);
           updateTranscriptMessage(itemId, finalTranscript, false);
-          updateTranscriptItemStatus(itemId, "DONE");
-          
-          // Log the current state of transcript items to verify the update
-          setTimeout(() => {
-            const items = transcriptItems.filter(item => item.itemId === itemId);
-            console.log("Updated item status:", items.length ? items[0].status : "item not found");
-          }, 100);
         }
         break;
       }
@@ -173,6 +161,8 @@ export function useHandleServerEvent() {
 
       case "response.done": {
         if (serverEvent.response?.output) {
+          const itemId = serverEvent.item?.id;
+          
           serverEvent.response.output.forEach((outputItem) => {
             if (
               outputItem.type === "function_call" &&
@@ -199,18 +189,47 @@ export function useHandleServerEvent() {
       }
 
       case "input_audio_buffer.speech_started": {
-        // User started speaking
-        setIsSpeaking(true);
-        // Set the flag for parallel processing in TranslationsPage
-        useElementsStore.getState().setTheUserIsSpeaking(true);
+        // Only process this event if the selected agent is the translation coordinator
+        const selectedAgentName = useElementsStore.getState().selectedAgentName;
+        if (selectedAgentName === "patientToDoctor" || selectedAgentName === "doctorToPatient"||selectedAgentName === "translationCoordinator") {
+          // Flag for when the user starts speaking
+          const timestamp = new Date().toISOString();
+          const flagId = serverEvent.event_id || generateId();
+          console.log(`hook:User started speaking [${flagId}] at ${timestamp}`);
+          useElementsStore.getState().setTheUserIsSpeaking(true);
+          // Set assistantVoiceFinished to false when user starts speaking
+          useElementsStore.getState().setAssistantVoiceFinished(false);
+        }
         break;
       }
 
       case "input_audio_buffer.speech_stopped": {
-        // User stopped speaking
-        setIsSpeaking(false);
-        // Set the flag for parallel processing in TranslationsPage
-        useElementsStore.getState().setTheUserIsSpeaking(false);
+        // Only process this event if the selected agent is the translation coordinator
+        const selectedAgentName = useElementsStore.getState().selectedAgentName;
+        if (selectedAgentName === "patientToDoctor" || selectedAgentName === "doctorToPatient"||selectedAgentName === "translationCoordinator") {
+          // Flag for when the user stops speaking
+          const timestamp = new Date().toISOString();
+          const flagId = serverEvent.event_id || generateId();
+          console.log(`hook:User stopped speaking [${flagId}] at ${timestamp}`);
+          useElementsStore.getState().setTheUserIsSpeaking(false);
+        }
+        break;
+      }
+
+      case "response.audio.done": {
+        // Only process this event if the selected agent is the translation coordinator
+        const selectedAgentName = useElementsStore.getState().selectedAgentName;
+        if (selectedAgentName === "patientToDoctor" || selectedAgentName === "doctorToPatient"||selectedAgentName === "translationCoordinator") {
+          // Flag for when the audio output has finished streaming
+          const timestamp = new Date().toISOString();
+          const flagId =
+            serverEvent.event_id ||
+            (serverEvent.response && (serverEvent.response as any).id) ||
+            generateId();
+          addTranscriptBreadcrumb(`hook:Audio output finished [${flagId}] at ${timestamp}`);
+          // Set assistantVoiceFinished to true when audio output is done
+          useElementsStore.getState().setAssistantVoiceFinished(true);
+        }
         break;
       }
 

@@ -1,10 +1,10 @@
 "use client";
 
-import { useElements } from "@/app/contexts/ElementsContext";
+import { useElementsStore } from "@/store/elementsStore";
 import { useEvent } from "@/app/contexts/EventContext";
 
 export function useSendClientEvent() {
-  const { dcRef } = useElements();
+  const { dcRef } = useElementsStore();
   const { logClientEvent } = useEvent();
 
   const sendClientEvent = (eventObj: any, eventNameSuffix = "") => {
