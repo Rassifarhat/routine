@@ -25,6 +25,7 @@ export default function TranslationPage({ changeAgent }: TranslationPageProps) {
   const theUserIsSpeaking = useElementsStore(state => state.theUserIsSpeaking);
   const assistantVoiceFinished = useElementsStore(state => state.assistantVoiceFinished);
   const selectedAgentName = useElementsStore(state => state.selectedAgentName);
+  const micMuted = useElementsStore(state => state.micMuted);
   const setTheUserIsSpeaking = useElementsStore(state => state.setTheUserIsSpeaking);
   const setAssistantVoiceFinished = useElementsStore(state => state.setAssistantVoiceFinished);
   
@@ -48,6 +49,127 @@ export default function TranslationPage({ changeAgent }: TranslationPageProps) {
   // Create a ref to track if the assistant just finished speaking to prevent re-entry
   const assistantJustFinishedRef = useRef<boolean>(false);
   
+
+
+
+useEffect(() => {
+  let cancelled = false;
+  // Define states: "idle" (ready to record), "recording" (currently recording), "blocked" (recorded; waiting for silence)
+  let currentState: "idle" | "recording" | "blocked" = "idle";
+  let silenceStartTime: number | null = null;
+  let animationFrameId: number;
+
+  // Instead of calling getUserMedia again, use the shared mic stream
+  const micStream = useElementsStore.getState().micRef.current;
+  if (!micStream) {
+    console.error("No mic stream available from realtime connection.");
+    return;
+  }
+
+  const audioContext = new AudioContext();
+  const source = audioContext.createMediaStreamSource(micStream);
+  const analyser = audioContext.createAnalyser();
+  analyser.fftSize = 2048;
+  source.connect(analyser);
+
+  const dataArray = new Uint8Array(analyser.frequencyBinCount);
+  const volumeThreshold = 15; // Adjust threshold as needed
+
+  const startRecording = () => {
+    const recorderOptions = { mimeType: 'audio/webm' };
+    const mediaRecorder = new MediaRecorder(micStream, recorderOptions);
+    const chunks: BlobPart[] = [];
+
+    mediaRecorder.ondataavailable = (event) => {
+      if (event.data && event.data.size > 0) {
+        chunks.push(event.data);
+      }
+    };
+
+    mediaRecorder.onstop = () => {
+      const blob = new Blob(chunks, { type: 'audio/webm' });
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64data = (reader.result as string).split(',')[1];
+        // Send the Base64 audio to your API
+        fetch("/api/languageDetectorServer", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ audio: base64data })
+        })
+          .then(response => response.json())
+          .then(data => console.log("Language detection response:", data))
+          .catch(error => console.error("Error uploading audio:", error));
+      };
+      reader.readAsDataURL(blob);
+      // After recording, block further recordings until silence is detected
+      currentState = "blocked";
+    };
+
+    mediaRecorder.start();
+    // Automatically stop recording after 2 seconds
+    setTimeout(() => {
+      if (mediaRecorder.state !== "inactive") {
+        mediaRecorder.stop();
+      }
+    }, 2000);
+  };
+
+  const checkForSpeech = () => {
+    if (cancelled) return;
+    
+    // Get the current micMuted state
+    const micMuted = useElementsStore.getState().micMuted;
+    
+    analyser.getByteTimeDomainData(dataArray);
+    let sum = 0;
+    for (let i = 0; i < dataArray.length; i++) {
+      sum += Math.abs(dataArray[i] - 128);
+    }
+    const avg = sum / dataArray.length;
+
+    // Only process audio if the mic is not muted
+    if (!micMuted) {
+      if (currentState === "idle") {
+        if (avg > volumeThreshold) {
+          console.log("Page:Speech detected: starting 2-second recording.");
+          currentState = "recording";
+          startRecording();
+        }
+      } else if (currentState === "blocked") {
+        // Wait for at least 1 second of silence before resetting state
+        if (avg <= volumeThreshold) {
+          if (silenceStartTime === null) {
+            silenceStartTime = Date.now();
+          } else if (Date.now() - silenceStartTime > 3000) {
+            currentState = "idle";
+            silenceStartTime = null;
+          }
+        } else {
+          silenceStartTime = null;
+        }
+      }
+    } else {
+      // If mic is muted, we should reset to idle state when unmuted
+      if (currentState !== "idle") {
+        currentState = "idle";
+        silenceStartTime = null;
+      }
+    }
+    
+    animationFrameId = requestAnimationFrame(checkForSpeech);
+  };
+
+  checkForSpeech();
+
+  return () => {
+    cancelled = true;
+    cancelAnimationFrame(animationFrameId);
+    audioContext.close();
+    // Do not stop micStream here since it's shared with WebRTC
+  };
+}, []);
+
   // Effect to synchronize local language state with patientDataStore
   // This only updates the languages context without triggering agent changes
   useEffect(() => {
@@ -57,7 +179,6 @@ export default function TranslationPage({ changeAgent }: TranslationPageProps) {
       return;
     }
     
-    console.log(`TranslationsPage: Updating language context - Patient: ${patientLanguage}, Doctor: ${doctorLanguage}`);
     setLanguagesContext({
       doctorLanguage,
       patientLanguage
@@ -66,32 +187,26 @@ export default function TranslationPage({ changeAgent }: TranslationPageProps) {
     // Manual one-time reload of the agent after language change
     // This pattern breaks the dependency loop
     const timeout = setTimeout(() => {
-      console.log("TranslationsPage: Reloading agent after language change");
       changeAgent(currentTranslatorRef.current);
     }, 100);
     
     return () => clearTimeout(timeout);
   }, [doctorLanguage, patientLanguage]);
   
-  useEffect(() => {
-    console.log(`debuggingTranslationPage: the user speaking: ${theUserIsSpeaking}, changingagentref: ${changingAgentRef.current}`);
-  }, [theUserIsSpeaking, changingAgentRef.current]);
+
 
   // Effect to handle agent switching when user starts speaking
   useEffect(() => {
     // Only proceed if user is speaking and we're not already changing agents
     if (theUserIsSpeaking && !changingAgentRef.current) {
-      console.log("TranslationPage: picking translator");
       assistantJustFinishedRef.current = false; 
       // Set changing agent flag to true to prevent recursive calls
       changingAgentRef.current = true;
       
       // Toggle the translator type
       if (currentTranslatorRef.current === "doctorToPatient") {
-        console.log("TranslationPage: switching to doctor--> patient");
         currentTranslatorRef.current = "patientToDoctor";
       } else {
-        console.log("TranslationPage: switching to patient--> doctor");
         currentTranslatorRef.current = "doctorToPatient";
       }
       
@@ -104,7 +219,6 @@ export default function TranslationPage({ changeAgent }: TranslationPageProps) {
   useEffect(() => {
     if (!theUserIsSpeaking && changingAgentRef.current) {
       changingAgentRef.current = false;
-      console.log("TranslationPage: second useeffect entered")
     }
   }, [theUserIsSpeaking]);
   
@@ -167,6 +281,9 @@ export default function TranslationPage({ changeAgent }: TranslationPageProps) {
         </p>
         <p className="text-sm text-gray-500">
           {assistantVoiceFinished ? "Translation complete" : ""}
+        </p>
+        <p className="text-sm text-gray-500">
+          Microphone status: {micMuted ? "Muted (during translation)" : "Active"}
         </p>
       </div>
     </div>

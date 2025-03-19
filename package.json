@@ -15,6 +15,7 @@
     "axios": "^1.8.2",
     "clsx": "^2.1.1",
     "framer-motion": "^12.4.7",
+    "franc": "^6.2.0",
     "lucide-react": "^0.477.0",
     "marked": "^15.0.7",
     "next": "15.1.4",

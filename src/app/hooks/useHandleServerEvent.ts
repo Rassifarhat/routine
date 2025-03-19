@@ -162,7 +162,29 @@ export function useHandleServerEvent() {
       case "response.done": {
         if (serverEvent.response?.output) {
           const itemId = serverEvent.item?.id;
-          
+          const selectedAgentName = useElementsStore.getState().selectedAgentName;
+          if (selectedAgentName === "patientToDoctor" || selectedAgentName === "doctorToPatient") {
+            const assistantMessages = transcriptItems.filter(
+              item => item.type === "MESSAGE" && item.role === "assistant" && !item.isHidden
+            );
+            
+            const latestMessage = assistantMessages.length > 0 
+              ? assistantMessages.sort((a, b) => b.createdAtMs - a.createdAtMs)[0] 
+              : null;
+            
+            const messageTitle = latestMessage?.title || "";
+            const charCount = messageTitle.length;
+            const dynamicDelay = charCount * 40; // 200ms per character
+            
+            const finalDelay = Math.max(dynamicDelay, 3000);
+            
+            console.log(`Calculated delay of ${finalDelay}ms based on ${charCount} characters`);
+            
+            setTimeout(() => {
+              console.log(`Dynamic delay complete (${finalDelay}ms) - unmuting microphone now`);
+              useElementsStore.getState().setMicMuted(false);
+            }, finalDelay);
+          }
           serverEvent.response.output.forEach((outputItem) => {
             if (
               outputItem.type === "function_call" &&
@@ -195,7 +217,6 @@ export function useHandleServerEvent() {
           // Flag for when the user starts speaking
           const timestamp = new Date().toISOString();
           const flagId = serverEvent.event_id || generateId();
-          console.log(`hook:User started speaking [${flagId}] at ${timestamp}`);
           useElementsStore.getState().setTheUserIsSpeaking(true);
           // Set assistantVoiceFinished to false when user starts speaking
           useElementsStore.getState().setAssistantVoiceFinished(false);
@@ -210,25 +231,13 @@ export function useHandleServerEvent() {
           // Flag for when the user stops speaking
           const timestamp = new Date().toISOString();
           const flagId = serverEvent.event_id || generateId();
-          console.log(`hook:User stopped speaking [${flagId}] at ${timestamp}`);
           useElementsStore.getState().setTheUserIsSpeaking(false);
-        }
-        break;
-      }
-
-      case "response.audio.done": {
-        // Only process this event if the selected agent is the translation coordinator
-        const selectedAgentName = useElementsStore.getState().selectedAgentName;
-        if (selectedAgentName === "patientToDoctor" || selectedAgentName === "doctorToPatient"||selectedAgentName === "translationCoordinator") {
-          // Flag for when the audio output has finished streaming
-          const timestamp = new Date().toISOString();
-          const flagId =
-            serverEvent.event_id ||
-            (serverEvent.response && (serverEvent.response as any).id) ||
-            generateId();
-          addTranscriptBreadcrumb(`hook:Audio output finished [${flagId}] at ${timestamp}`);
-          // Set assistantVoiceFinished to true when audio output is done
-          useElementsStore.getState().setAssistantVoiceFinished(true);
+          
+          // Mute the microphone when user stops speaking during translation
+          if (selectedAgentName === "patientToDoctor" || selectedAgentName === "doctorToPatient") {
+            useElementsStore.getState().setMicMuted(true);
+            addTranscriptBreadcrumb(`Mic muted after user stopped speaking [${flagId}] at ${timestamp}`);
+          }
         }
         break;
       }

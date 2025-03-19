@@ -36,7 +36,6 @@ export const usePatientDataStore = create<PatientDataState>((set) => ({
   // Initialize language information with empty value
   languageSpoken: "",
   setLanguageSpoken: (language) => {
-    console.log('Setting language spoken to:', language);
     set({ 
     languageSpoken: language 
   })},
@@ -47,7 +46,6 @@ export const usePatientDataStore = create<PatientDataState>((set) => ({
     doctorLanguage: ""
   },
   setLanguagesContext: (context) => { 
-    console.log('Setting languages context to:', context);
     set({ 
     languagesContext: context 
   })},

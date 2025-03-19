@@ -30,6 +30,8 @@ interface ElementsState {
   setTheUserIsSpeaking: (speaking: boolean) => void;
   assistantVoiceFinished: boolean;
   setAssistantVoiceFinished: (finished: boolean) => void;
+  micMuted: boolean;
+  setMicMuted: (muted: boolean) => void;
   
   // Surgery info state
   surgeryInfoNeeded: RefObject<boolean | null>;
@@ -75,12 +77,17 @@ export const useElementsStore = create<ElementsState>((set) => ({
   setShowTranslationsPage: (show) => set({ showTranslationsPage: show }),
   theUserIsSpeaking: false,
   setTheUserIsSpeaking: (speaking) => {
-    //console.log("store: TheUserIsSpeaking", speaking);
+    console.log("store: TheUserIsSpeaking", speaking);
     set({ theUserIsSpeaking: speaking })},
   assistantVoiceFinished: false,
   setAssistantVoiceFinished: (finished) => {
-    //console.log("store: AssistantVoiceFinished", finished);
+    console.log("store: AssistantVoiceFinished", finished);
     set({ assistantVoiceFinished: finished })},
+  micMuted: false,
+  setMicMuted: (muted) => {
+    console.log("store: MicMuted", muted);
+    set({ micMuted: muted })
+  },
   
   // Surgery info state - defaults to false
   surgeryInfoNeeded: (() => {
@@ -107,4 +114,4 @@ export const useElementsStore = create<ElementsState>((set) => ({
   dcRef: createRef<RTCDataChannel | null>(),
   audioElementRef: createRef<HTMLAudioElement | null>(),
   micRef: createRef<MediaStream | null>(),
-}));
+}))

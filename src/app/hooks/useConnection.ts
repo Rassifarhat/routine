@@ -12,7 +12,7 @@ export function useConnection() {
     setSessionStatus, 
     pcRef, 
     dcRef, 
-    audioElementRef, 
+    audioElementRef,
     setDataChannel,
     sessionStatus
   } = useElementsStore();
@@ -35,7 +35,8 @@ export function useConnection() {
 
   const connectToRealtime = async (
     isAudioPlaybackEnabled: boolean,
-    handleServerEventRef: RefObject<(event: any) => void>
+    handleServerEventRef: RefObject<(event: any) => void>,
+    micStream: MediaStream
   ) => {
     if (sessionStatus !== "DISCONNECTED") return;
     setSessionStatus("CONNECTING");
@@ -46,15 +47,21 @@ export function useConnection() {
         return;
       }
 
+      // Initialize audio element if needed
       if (!audioElementRef.current) {
-        console.log("connecttorealtime: Creating audio element");
-        audioElementRef.current = document.createElement("audio");
+        const audioEl = document.createElement("audio");
+        audioEl.id = "realtime-audio";
+        audioEl.style.display = "none"; // hide it from the UI
+        document.body.appendChild(audioEl);
+        audioElementRef.current = audioEl;
       }
       audioElementRef.current.autoplay = isAudioPlaybackEnabled;
 
+      // Create the connection with the provided microphone stream
       const { pc, dc } = await createRealtimeConnection(
         EPHEMERAL_KEY,
-        audioElementRef
+        audioElementRef,
+        micStream
       );
       pcRef.current = pc;
       dcRef.current = dc;
@@ -82,6 +89,7 @@ export function useConnection() {
   };
 
   const disconnectFromRealtime = () => {
+    // Clean up WebRTC connection
     if (pcRef.current) {
       pcRef.current.getSenders().forEach((sender) => {
         if (sender.track) {
@@ -92,6 +100,7 @@ export function useConnection() {
       pcRef.current.close();
       pcRef.current = null;
     }
+    
     setDataChannel(null);
     setSessionStatus("DISCONNECTED");
     
