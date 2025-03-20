@@ -5,6 +5,7 @@ import React, { useEffect, useState } from "react";
 import App from "./App";
 import { motion } from "framer-motion";
 import { useElementsStore } from "@/store/elementsStore";
+import StarryBackground from "./components/UI/StarryBackground";
 
 export default function Page() {
   const { theUserIsSpeaking } = useElementsStore();
@@ -40,7 +41,9 @@ export default function Page() {
         style={{ top: "10px", right: "10px", bottom: "10px", left: "10px" }}
       >
        
-            <App />
+       <StarryBackground>
+        <App />
+      </StarryBackground>
       
       </div>
     </div>

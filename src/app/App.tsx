@@ -232,7 +232,7 @@ function App() {
   const agentSetKey = searchParams.get("agentConfig") || "default";
 
   return (
-    <div className="text-base flex flex-col h-screen bg-health-dark text-gray-800 relative rounded-md">
+    <div className="text-base flex flex-col h-screen text-gray-800 relative rounded-md">
       <div className="p-5 text-lg font-semibold flex justify-between items-center">
         <div className="flex items-center">
           <div onClick={() => window.location.reload()} style={{ cursor: 'pointer' }}>
@@ -289,13 +289,7 @@ function App() {
         </div>
       </div>
       <div className="flex flex-1 gap-2 px-2 overflow-hidden relative">
-        <Transcript
-          onSendMessage={handleSendTextMessage}
-          canSend={
-            sessionStatus === "CONNECTED" &&
-            dcRef.current?.readyState === "open"
-          }
-        />
+        <Eih />
         {loadSurgicalPage ? (
           <SurgicalScribePage />
         ) : surgeryInfoNeeded?.current ? (

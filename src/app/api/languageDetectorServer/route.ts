@@ -1,4 +1,3 @@
-// File: app/api/speechToText/route.ts
 import { exec } from 'child_process';
 import fs from 'fs';
 import { NextResponse } from "next/server";
